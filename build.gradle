@@ -1,0 +1,30 @@
+plugins {
+    id 'java'
+}
+
+group 'blue.sparse'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.joml:joml:1.9.13'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+}
+
+//v_portalgun
+//  v_portalgun.mdl
+//  v_portalgun.vvd
+//  v_portalgun.vtx
+
+//var model = ValveModel.load("v_portalgun", new File("v_portalgun"));
+
+//model.export(new File("v_portalgun.fbx"));
+
+test {
+    useJUnitPlatform()
+}
