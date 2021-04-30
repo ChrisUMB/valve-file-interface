@@ -1,6 +1,11 @@
 package blue.sparse.vfi.files.vtf.image;
 
+import blue.sparse.vfi.files.vtf.VTFMipmap;
 import org.joml.Vector3f;
+
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.util.List;
 
 public final class ImageUtil {
 
@@ -43,5 +48,28 @@ public final class ImageUtil {
 		return encodeRGB888(r, g, b);
 	}
 
+	public static BufferedImage scaleImage(BufferedImage image, int newWidth, int newHeight) {
+		BufferedImage bufferedImage = new BufferedImage(newWidth, newHeight, image.getType());
+		Graphics2D graphics = bufferedImage.createGraphics();
+		graphics.drawImage(image, 0, 0, newWidth, newHeight, null);
+		graphics.dispose();
+		return bufferedImage;
+	}
+
+	public static BufferedImage createThumbnail(BufferedImage image) {
+		int w = image.getWidth();
+		int h = image.getHeight();
+
+		float ar = (float) w / (float) h;
+		if (ar > 1.0f) {
+			w = 16;
+			h = (int) (16 / ar);
+		} else {
+			h = 16;
+			w = (int) (16 * ar);
+		}
+
+		return scaleImage(image, w, h);
+	}
 
 }

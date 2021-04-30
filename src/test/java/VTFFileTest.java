@@ -1,8 +1,6 @@
 import blue.sparse.vfi.files.vtf.VTFFile;
 import blue.sparse.vfi.files.vtf.image.ImageDataFormat;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.channels.SeekableByteChannel;
@@ -14,8 +12,10 @@ public class VTFFileTest {
 	public static void main(String[] args) throws IOException {
 
 		VTFFile read = VTFFile.read(new File("source/7-2.vtf"));
-		read.getHeader().lowResImageFormat = ImageDataFormat.RGBA8888;
-		read.getHeader().highResImageFormat = ImageDataFormat.RGBA8888;
+		read.setHighFormat(ImageDataFormat.RGBA8888);
+		read.setLowFormat(ImageDataFormat.RGBA8888);
+//		read.getHeader().lowResImageFormat = ImageDataFormat.RGBA8888;
+//		read.getHeader().highResImageFormat = ImageDataFormat.RGBA8888;
 
 		File out = new File("source/7-2-out.vtf");
 		SeekableByteChannel channel = Files.newByteChannel(out.toPath(), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
