@@ -37,7 +37,7 @@ public final class ImageReaderDXT1 implements ImageFormatReader {
 				var color1 = ImageUtil.decodeRGB565(color1int);
 				var codes = buffer.getInt();
 
-				var array = interpolateColors(color0, color1);
+				var array = ImageWriterDXT1.interpolateColors(color0, color1);
 
 				for (int y = 0; y <= 3; y++) {
 					for (int x = 0; x <= 3; x++) {
@@ -60,37 +60,6 @@ public final class ImageReaderDXT1 implements ImageFormatReader {
 
 		buffer.order(originalOrder);
 		return bufferedImage;
-	}
-
-	private Vector3f[] interpolateColors(Vector3f color0, Vector3f color1) {
-		var color0int = (int) ImageUtil.encodeRGB565(color0) & 0xFFFF;
-		var color1int = (int) ImageUtil.encodeRGB565(color1) & 0xFFFF;
-
-		var array = new Vector3f[4];
-		for (int i = 0; i < array.length; i++) {
-			if (color0int > color1int) {
-				if (i == 0) {
-					array[i] = color0;
-				} else if (i == 1) {
-					array[i] = color1;
-				} else if (i == 2) {
-					array[i] = new Vector3f(color0).mul(2f).add(color1).div(3f);
-				} else {
-					array[i] = new Vector3f(color0).add(new Vector3f(color1).mul(2f)).div(3f);
-				}
-			} else {
-				if (i == 0) {
-					array[i] = color0;
-				} else if (i == 1) {
-					array[i] = color1;
-				} else if (i == 2) {
-					array[i] = new Vector3f(color0).add(color1).div(2f);
-				} else {
-					array[i] = new Vector3f(0f);
-				}
-			}
-		}
-		return array;
 	}
 
 }
