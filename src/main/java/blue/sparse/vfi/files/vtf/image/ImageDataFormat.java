@@ -19,7 +19,7 @@ public enum ImageDataFormat implements ImageFormatReader, ImageFormatWriter {
 	BGR888_BLUESCREEN,
 	ARGB8888,
 	BGRA8888,
-	DXT1(new ImageReaderDXT1(), null),
+	DXT1(new ImageReaderDXT1(), new ImageWriterDXT1()),
 	DXT3,
 	DXT5(new ImageReaderDXT5(), null),
 	BGRX8888,
