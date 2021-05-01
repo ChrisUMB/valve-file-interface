@@ -13,7 +13,9 @@ public class VTFFileTest {
 
 	public static void main(String[] args) throws IOException {
 
-		VTFFile read = VTFFile.read(new File("source/7-1.vtf"));
+		VTFFile read = VTFFile.read(new File("source/7-2.vtf"));
+		System.out.println("lowResImageFormat = "+read.getHeader().lowResImageFormat);
+		System.out.println("highResImageFormat = "+read.getHeader().highResImageFormat);
 //		read.getHeader().lowResImageFormat = ImageDataFormat.RGBA8888;
 //		read.getHeader().highResImageFormat = ImageDataFormat.RGBA8888;
 
@@ -27,9 +29,9 @@ public class VTFFileTest {
 //		System.out.println(header);
 
 		BufferedImage thumbnail = read.getThumbnail();
-//		ImageIO.write(thumbnail, "PNG", new File("source/7-0-thumbnail.png"));
+		ImageIO.write(thumbnail, "PNG", new File("source/7-2-thumbnail.png"));
 		BufferedImage image = read.getMipmaps().get(0).getImage();
-		ImageIO.write(image, "PNG", new File("source/7-1.vtf.png"));
+		ImageIO.write(image, "PNG", new File("source/7-2.vtf.png"));
 	}
 
 }

@@ -265,13 +265,13 @@ public final class VTFFile implements ValveFile {
 
 		header.bumpmapScale = buffer.getFloat();
 
-		ImageDataFormat lowResFormat = ImageDataFormat.values()[buffer.getInt()];
-		header.highResImageFormat = lowResFormat;
+		ImageDataFormat highResFormat = ImageDataFormat.values()[buffer.getInt()];
+		header.highResImageFormat = highResFormat;
 
 		header.mipmapCount = buffer.get();
 
-		ImageDataFormat highResFormat = ImageDataFormat.values()[buffer.getInt()];
-		header.lowResImageFormat = highResFormat;
+		ImageDataFormat lowResFormat = ImageDataFormat.values()[buffer.getInt()];
+		header.lowResImageFormat = lowResFormat;
 
 		header.lowResImageWidth = buffer.get();
 		header.lowResImageHeight = buffer.get();
