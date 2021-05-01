@@ -27,7 +27,7 @@ public final class ImageReaderDXT5 implements ImageFormatReader {
 			heightInBlocks++;
 		}
 
-		var bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		var bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
 		for (int blockY = 0; blockY < heightInBlocks; blockY++) {
 			for (int blockX = 0; blockX < widthInBlocks; blockX++) {

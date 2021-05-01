@@ -1,10 +1,9 @@
 package blue.sparse.vfi.assets;
 
-import blue.sparse.vfi.files.vtf.VTFFile;
-import blue.sparse.vfi.files.vtf.VTFMipmap;
-import blue.sparse.vfi.files.vtf.VTFResource;
+import blue.sparse.vfi.files.vtf.*;
 import blue.sparse.vfi.files.vtf.image.ImageDataFormat;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -24,6 +23,34 @@ public final class ValveTexture implements ValveAsset {
 
 	public static ValveTexture create(BufferedImage image) {
 		return new ValveTexture(VTFFile.create(image));
+	}
+
+	public void export(String format, File file) throws IOException {
+		BufferedImage image = vtf.getImage();
+		ImageIO.write(image, format, file);
+	}
+
+	public void export(String format, File directory, String name) throws IOException {
+		List<VTFMipmap> mipmaps = vtf.getMipmaps();
+		if (mipmaps.isEmpty()) {
+			throw new IllegalStateException("Tried to export VTF, but mipmaps were empty. [\"" + name + "\"]");
+		}
+
+		VTFMipmap mipmap = mipmaps.get(0);
+		List<VTFFrame> frames = mipmap.getFrames();
+		int i = 0;
+		for (VTFFrame frame : frames) {
+			List<VTFFace> faces = frame.getFaces();
+			if (faces.isEmpty()) {
+				continue;
+			}
+
+			VTFFace face = faces.get(0);
+
+			File out = new File(directory, name = "." + i + "." + format.toLowerCase());
+			ImageIO.write(face.getImage(), format, out);
+			i++;
+		}
 	}
 
 	public int getVersion() {
@@ -81,8 +108,6 @@ public final class ValveTexture implements ValveAsset {
 	public BufferedImage getImage() {
 		return vtf.getImage();
 	}
-
-
 
 	public void setImage(BufferedImage image) {
 		vtf.setImage(0, image);

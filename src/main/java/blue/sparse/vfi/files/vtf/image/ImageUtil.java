@@ -70,6 +70,14 @@ public final class ImageUtil {
         return encodeRGB888(r, g, b);
     }
 
+	public static Vector3f decodeRGB888(int rgb) {
+		var r = (rgb >> 16 & BITS_8) / (float) BITS_8;
+		var g = (rgb >> 8 & BITS_8) / (float) BITS_8;
+		var b = (rgb & BITS_8) / (float) BITS_8;
+
+		return new Vector3f(r, g, b);
+	}
+
 	public static BufferedImage scaleImage(BufferedImage image, int newWidth, int newHeight) {
 		BufferedImage bufferedImage = new BufferedImage(newWidth, newHeight, image.getType());
 		Graphics2D graphics = bufferedImage.createGraphics();
@@ -77,7 +85,6 @@ public final class ImageUtil {
 		graphics.dispose();
 		return bufferedImage;
 	}
-
 	public static BufferedImage createThumbnail(BufferedImage image) {
 		int w = image.getWidth();
 		int h = image.getHeight();
@@ -93,12 +100,4 @@ public final class ImageUtil {
 
 		return scaleImage(image, w, h);
 	}
-    public static Vector3f decodeRGB888(int rgb) {
-        var r = (rgb >> 16 & BITS_8) / (float) BITS_8;
-        var g = (rgb >> 8 & BITS_8) / (float) BITS_8;
-        var b = (rgb & BITS_8) / (float) BITS_8;
-
-        return new Vector3f(r, g, b);
-    }
-
 }

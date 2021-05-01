@@ -13,7 +13,7 @@ public class VTFFileTest {
 
 	public static void main(String[] args) throws IOException {
 
-		VTFFile read = VTFFile.read(new File("source/v_portalgun.vtf"));
+		VTFFile read = VTFFile.read(new File("source/7-1.vtf"));
 //		read.getHeader().lowResImageFormat = ImageDataFormat.RGBA8888;
 //		read.getHeader().highResImageFormat = ImageDataFormat.RGBA8888;
 
@@ -29,7 +29,7 @@ public class VTFFileTest {
 		BufferedImage thumbnail = read.getThumbnail();
 //		ImageIO.write(thumbnail, "PNG", new File("source/7-0-thumbnail.png"));
 		BufferedImage image = read.getMipmaps().get(0).getImage();
-		ImageIO.write(image, "PNG", new File("source/v_portalgun.vtf.png"));
+		ImageIO.write(image, "PNG", new File("source/7-1.vtf.png"));
 	}
 
 }
