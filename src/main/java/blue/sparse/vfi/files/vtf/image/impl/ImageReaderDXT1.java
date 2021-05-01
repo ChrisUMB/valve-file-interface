@@ -30,7 +30,6 @@ public final class ImageReaderDXT1 implements ImageFormatReader {
 
 		for (int blockY = 0; blockY < heightInBlocks; blockY++) {
 			for (int blockX = 0; blockX < widthInBlocks; blockX++) {
-
 				var color0int = (int) buffer.getShort() & 0xFFFF;
 				var color1int = (int) buffer.getShort() & 0xFFFF;
 				var color0 = ImageUtil.decodeRGB565(color0int);

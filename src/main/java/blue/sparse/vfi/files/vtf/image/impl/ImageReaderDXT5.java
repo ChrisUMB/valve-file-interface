@@ -27,7 +27,7 @@ public final class ImageReaderDXT5 implements ImageFormatReader {
 			heightInBlocks++;
 		}
 
-		var bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		var bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
 		for (int blockY = 0; blockY < heightInBlocks; blockY++) {
 			for (int blockX = 0; blockX < widthInBlocks; blockX++) {
@@ -38,6 +38,9 @@ public final class ImageReaderDXT5 implements ImageFormatReader {
 
 				var color0 = ImageUtil.decodeRGB565(color0int);
 				var color1 = ImageUtil.decodeRGB565(color1int);
+
+				System.out.println("color0 = " + color0);
+				System.out.println("color1 = " + color1);
 
 				var alpha0 = (alphaLong & 0xFF) / (float) (1 << 8);
 				var alpha1 = (alphaLong >> 8 & 0xFF) / (float) (1 << 8);
