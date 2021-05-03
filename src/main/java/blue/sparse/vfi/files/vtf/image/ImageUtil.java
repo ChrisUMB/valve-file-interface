@@ -8,6 +8,7 @@ public final class ImageUtil {
     public static final int BITS_6 = ((1 << 6) - 1); // 0x3F
     public static final int BITS_7 = ((1 << 7) - 1); // 0x7F
     public static final int BITS_8 = ((1 << 8) - 1); // 0xFF
+    public static final int BITS_16 = ((1 << 16) - 1); // 0xFF
 
     private ImageUtil() {
     }
