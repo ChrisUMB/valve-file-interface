@@ -12,13 +12,13 @@ public class DXT1WriteTest {
         BufferedImage image = ImageIO.read(new File("source/metal_box.png"));
 
 //        for (int i = 0; i < 10; i++) {
-            long start = System.currentTimeMillis();
-            byte[] data = ImageDataFormat.DXT1.write(image);
-            long diff1 = System.currentTimeMillis() - start;
-            start = System.currentTimeMillis();
-            image = ImageDataFormat.DXT1.read(image.getWidth(), image.getHeight(), ByteBuffer.wrap(data));
-            long diff2 = System.currentTimeMillis() - start;
-            System.out.printf("Write: %,dms, Read: %,dms%n", diff1, diff2);
+        long start = System.currentTimeMillis();
+        byte[] data = ImageDataFormat.DXT1.write(image);
+        long diff1 = System.currentTimeMillis() - start;
+        start = System.currentTimeMillis();
+        image = ImageDataFormat.DXT1.read(image.getWidth(), image.getHeight(), ByteBuffer.wrap(data));
+        long diff2 = System.currentTimeMillis() - start;
+        System.out.printf("Write: %,dms, Read: %,dms%n", diff1, diff2);
 //        }
 
         ImageIO.write(image, "PNG", new File("source/metal_box.dxt1.png"));
