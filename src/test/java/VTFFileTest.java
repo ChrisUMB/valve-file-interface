@@ -13,13 +13,13 @@ public class VTFFileTest {
 
 	public static void main(String[] args) throws IOException {
 
-		VTFFile read = VTFFile.read(new File("source/7-2.vtf"));
+		VTFFile read = VTFFile.read(new File("source/metal_box.vtf"));
 		System.out.println("lowResImageFormat = "+read.getHeader().lowResImageFormat);
 		System.out.println("highResImageFormat = "+read.getHeader().highResImageFormat);
 //		read.getHeader().lowResImageFormat = ImageDataFormat.RGBA8888;
 //		read.getHeader().highResImageFormat = ImageDataFormat.RGBA8888;
 
-//		File out = new File("source/7-2-out.vtf");
+//		File out = new File("source/metal_box-out.vtf");
 //		SeekableByteChannel channel = Files.newByteChannel(out.toPath(), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 //		VTFFile.write(read, channel);
 //		channel.close();
@@ -29,9 +29,9 @@ public class VTFFileTest {
 //		System.out.println(header);
 
 		BufferedImage thumbnail = read.getThumbnail();
-		ImageIO.write(thumbnail, "PNG", new File("source/7-2-thumbnail.png"));
+		ImageIO.write(thumbnail, "PNG", new File("source/metal_box-thumbnail.png"));
 		BufferedImage image = read.getMipmaps().get(0).getImage();
-		ImageIO.write(image, "PNG", new File("source/7-2.vtf.png"));
+		ImageIO.write(image, "PNG", new File("source/metal_box.vtf.png"));
 	}
 
 }

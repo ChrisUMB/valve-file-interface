@@ -7,8 +7,9 @@ import org.joml.Vector3f;
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 
-public class ImageWriterDXT1 implements ImageFormatWriter {
+public final class ImageWriterDXT1 implements ImageFormatWriter {
 
     private static final int[] SCORES = new int[4];
 
@@ -16,10 +17,6 @@ public class ImageWriterDXT1 implements ImageFormatWriter {
     public byte[] write(BufferedImage image) {
         int width = image.getWidth();
         int height = image.getHeight();
-
-
-        // 8 * 8 * 4 = 256 bytes in an RGBA8888 image
-        // 2 * 2 * 8 = 32
 
         var widthInBlocks = width / 4;
         var heightInBlocks = height / 4;
@@ -54,12 +51,7 @@ public class ImageWriterDXT1 implements ImageFormatWriter {
                     }
                 }
 
-                BlockData best = best(
-                        run(originalColors, ImageWriterDXT1::getMostDifferentAverageColors),
-                        run(originalColors, ImageWriterDXT1::getTwoMostDifferentColors),
-                        run(originalColors, ImageWriterDXT1::getMinMaxColors),
-                        run(originalColors, ImageWriterDXT1::getMostCommonUniqueColors)
-                );
+                BlockData best = evaluate(originalColors);
 
                 buffer.putShort(ImageUtil.encodeRGB565(best.min));
                 buffer.putShort(ImageUtil.encodeRGB565(best.max));
@@ -67,7 +59,17 @@ public class ImageWriterDXT1 implements ImageFormatWriter {
             }
         }
 
+        System.out.println("SCORES = " + Arrays.toString(SCORES));
         return resultBytes;
+    }
+
+    public static BlockData evaluate(Vector3f[] originalColors) {
+        return best(
+                run(originalColors, ImageWriterDXT1::getMostDifferentAverageColors),
+                run(originalColors, ImageWriterDXT1::getTwoMostDifferentColors),
+                run(originalColors, ImageWriterDXT1::getMinMaxColors),
+                run(originalColors, ImageWriterDXT1::getMostCommonUniqueColors)
+        );
     }
 
     private static BlockData run(Vector3f[] originalColors, Algorithm algorithm) {
@@ -109,35 +111,36 @@ public class ImageWriterDXT1 implements ImageFormatWriter {
 //
 //            return new BlockData(max, min, code, distance);
 //        } else {
-            Vector3f[] colorOptions1 = interpolateColors(min, max);
-            Vector3f[] colorOptions2 = interpolateColors(max, min);
-            int code1 = 0;
-            int code2 = 0;
+        Vector3f[] colorOptions1 = interpolateColors(min, max);
+        Vector3f[] colorOptions2 = interpolateColors(max, min);
+        int code1 = 0;
+        int code2 = 0;
 
-            float[] distance1 = new float[1];
-            float[] distance2 = new float[1];
-            for (int i = 0; i < originalColors.length; i++) {
-                code1 |= getClosestColor(distance1, colorOptions1, originalColors[i]) << (i * 2);
-                code2 |= getClosestColor(distance2, colorOptions2, originalColors[i]) << (i * 2);
-            }
+        float[] distance1 = new float[1];
+        float[] distance2 = new float[1];
+        for (int i = 0; i < originalColors.length; i++) {
+            code1 |= getClosestColor(distance1, colorOptions1, originalColors[i]) << (i * 2);
+            code2 |= getClosestColor(distance2, colorOptions2, originalColors[i]) << (i * 2);
+        }
 
-            if (distance1[0] < distance2[0]) {
-                return new BlockData(min, max, code1, distance1[0]);
-            } else {
-                return new BlockData(max, min, code2, distance2[0]);
-            }
+        if (distance1[0] < distance2[0]) {
+            return new BlockData(min, max, code1, distance1[0]);
+        } else {
+            return new BlockData(max, min, code2, distance2[0]);
+        }
 //        }
     }
 
-    private static record BlockData(Vector3f min, Vector3f max, int code, float distance) {
+    public static record BlockData(Vector3f min, Vector3f max, int code, float distance) {
 
     }
-    private static int getClosestColor(float[] distanceTarget, Vector3f[] options, Vector3f color) {
+
+    public static int getClosestColor(float[] distanceTarget, Vector3f[] options, Vector3f color) {
         float distance = Float.POSITIVE_INFINITY;
         int index = -1;
 
         for (int i = 0; i < options.length; i++) {
-            float currentDistance = options[i].distanceSquared(color);
+            float currentDistance = options[i].distance(color);
             if (currentDistance < distance) {
                 distance = currentDistance;
                 index = i;
@@ -152,14 +155,14 @@ public class ImageWriterDXT1 implements ImageFormatWriter {
         int[] counts = new int[originalColors.length];
 
         for (int i = 0; i < originalColors.length; i++) {
-            if(counts[i] == -1)
+            if (counts[i] == -1)
                 continue;
 
             Vector3f color = originalColors[i];
             for (int j = 0; j < originalColors.length; j++) {
                 Vector3f otherColor = originalColors[j];
 
-                if(color.equals(otherColor)) {
+                if (color.equals(otherColor)) {
                     counts[i]++;
                     counts[j] = -1;
                 }
@@ -169,7 +172,7 @@ public class ImageWriterDXT1 implements ImageFormatWriter {
         int bestIndex1 = 0;
         int bestIndex2 = 1;
         for (int i = 0; i < counts.length; i++) {
-            if(counts[i] >= counts[bestIndex1]) {
+            if (counts[i] >= counts[bestIndex1]) {
                 bestIndex2 = bestIndex1;
                 bestIndex1 = i;
             }
