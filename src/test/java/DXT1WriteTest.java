@@ -9,7 +9,7 @@ import java.nio.ByteBuffer;
 public class DXT1WriteTest {
 
     public static void main(String[] args) throws IOException {
-        BufferedImage image = ImageIO.read(new File("source/metal_box.png"));
+        BufferedImage image = ImageIO.read(new File("tests-in/metal_box.png"));
 
 //        for (int i = 0; i < 10; i++) {
             long start = System.currentTimeMillis();
@@ -21,7 +21,7 @@ public class DXT1WriteTest {
             System.out.printf("Write: %,dms, Read: %,dms%n", diff1, diff2);
 //        }
 
-        ImageIO.write(image, "PNG", new File("source/metal_box.dxt1.png"));
+        ImageIO.write(image, "PNG", new File("tests-out/metal_box.dxt1.png"));
     }
 
 }

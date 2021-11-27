@@ -3,6 +3,7 @@ package blue.sparse.vfi.files.vtf.image.impl;
 import blue.sparse.pixel.PixelDisplay;
 import blue.sparse.vfi.files.vtf.image.ImageFormatWriter;
 import blue.sparse.vfi.files.vtf.image.ImageUtil;
+import blue.sparse.vfi.files.vtf.image.impl.dxt.ImageWriterDXT1;
 import org.joml.Vector3f;
 
 import java.awt.image.BufferedImage;
