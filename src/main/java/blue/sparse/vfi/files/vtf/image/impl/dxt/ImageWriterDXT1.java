@@ -1,4 +1,4 @@
-package blue.sparse.vfi.files.vtf.image.impl;
+package blue.sparse.vfi.files.vtf.image.impl.dxt;
 
 import blue.sparse.vfi.files.vtf.image.ImageFormatWriter;
 import blue.sparse.vfi.files.vtf.image.ImageUtil;
@@ -7,8 +7,6 @@ import org.joml.Vector3f;
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class ImageWriterDXT1 implements ImageFormatWriter {
 
@@ -69,7 +67,6 @@ public class ImageWriterDXT1 implements ImageFormatWriter {
             }
         }
 
-        System.out.println("SCORES = " + Arrays.toString(SCORES));
         return resultBytes;
     }
 

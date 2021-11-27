@@ -2,12 +2,17 @@ package blue.sparse.vfi.assets;
 
 import blue.sparse.vfi.files.vtf.*;
 import blue.sparse.vfi.files.vtf.image.ImageDataFormat;
+import org.joml.Vector3f;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
+import java.util.Set;
 
 public final class ValveTexture implements ValveAsset {
 
@@ -23,6 +28,16 @@ public final class ValveTexture implements ValveAsset {
 
 	public static ValveTexture create(BufferedImage image) {
 		return new ValveTexture(VTFFile.create(image));
+	}
+
+	public void save(File file) throws IOException {
+		SeekableByteChannel channel = Files.newByteChannel(
+				file.toPath(),
+				StandardOpenOption.WRITE,
+				StandardOpenOption.CREATE
+		);
+
+		VTFFile.write(vtf, channel);
 	}
 
 	public void export(String format, File file) throws IOException {
@@ -124,4 +139,34 @@ public final class ValveTexture implements ValveAsset {
 	public List<VTFResource> getResources() {
 		return vtf.getResources();
 	}
+
+	public VTFResource getResourceByTag(String tag) {
+		return vtf.getResourceByTag(tag);
+	}
+
+	public VTFResource getResourceByTag(byte a, byte b, byte c) {
+		return vtf.getResourceByTag(a, b, c);
+	}
+
+	public Set<VTFTextureFlag> getFlags() {
+		return vtf.getFlags();
+	}
+
+	public boolean isFlagSet(VTFTextureFlag flag) {
+		return vtf.isFlagSet(flag);
+	}
+
+	public boolean setFlag(VTFTextureFlag flag, boolean state) {
+		return vtf.setFlag(flag, state);
+	}
+
+	public Vector3f getReflectivity() {
+		return vtf.getReflectivity();
+	}
+
+	public void setReflectivity(Vector3f reflectivity) {
+		vtf.setReflectivity(reflectivity);
+	}
+
+
 }

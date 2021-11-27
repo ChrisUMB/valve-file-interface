@@ -3,35 +3,38 @@ package blue.sparse.vfi.files.vtf;
 import blue.sparse.vfi.files.ValveFile;
 import blue.sparse.vfi.files.vtf.image.ImageDataFormat;
 import blue.sparse.vfi.files.vtf.image.ImageUtil;
+import org.joml.Vector3f;
 
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.WritableByteChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public final class VTFFile implements ValveFile {
 	private final Header header;
 	private final BufferedImage thumbnail;
 	private final List<VTFMipmap> mipmaps;
 	private final List<VTFResource> resources;
+	private final Set<VTFTextureFlag> flags;
 
 	private VTFFile(
 			Header header,
 			BufferedImage thumbnail,
 			List<VTFMipmap> mipmaps,
-			List<VTFResource> resources
+			List<VTFResource> resources,
+			Set<VTFTextureFlag> flags
 	) {
 		this.header = header;
 		this.thumbnail = thumbnail;
 		this.mipmaps = mipmaps;
 		this.resources = resources;
+		this.flags = flags;
 	}
 
 	public int getVersion() {
@@ -150,8 +153,62 @@ public final class VTFFile implements ValveFile {
 		return resources;
 	}
 
+	public VTFResource getResourceByTag(String tag) {
+		byte[] bytes = tag.getBytes(StandardCharsets.UTF_8);
+		return resources.stream().filter(it -> Arrays.equals(it.getTag(), bytes)).findFirst().orElse(null);
+	}
+
+	public VTFResource getResourceByTag(byte a, byte b, byte c) {
+		byte[] bytes = new byte[]{a, b, c};
+		return resources.stream().filter(it -> Arrays.equals(it.getTag(), bytes)).findFirst().orElse(null);
+	}
+
+	public Set<VTFTextureFlag> getFlags() {
+		return flags;
+	}
+
+	public boolean isFlagSet(VTFTextureFlag flag) {
+		return flags.contains(flag);
+	}
+
+	public boolean setFlag(VTFTextureFlag flag, boolean state) {
+		if (state) {
+			return flags.add(flag);
+		} else {
+			return flags.remove(flag);
+		}
+	}
+
+	public int getFaceCount() {
+		short firstFrame = header.firstFrame;
+
+		if (isFlagSet(VTFTextureFlag.ENVMAP)) {
+			if (firstFrame != -1 && getVersionMinor() < 5) {
+				return 7;
+			} else {
+				return 6;
+			}
+		}
+
+		return 1;
+	}
+
+	public Vector3f getReflectivity() {
+		return new Vector3f(header.reflectivity[0], header.reflectivity[1], header.reflectivity[2]);
+	}
+
+	public void setReflectivity(Vector3f reflectivity) {
+		header.reflectivity[0] = reflectivity.x;
+		header.reflectivity[1] = reflectivity.y;
+		header.reflectivity[2] = reflectivity.z;
+	}
+
 	public void refreshMipmapCount() {
 		getHeader().mipmapCount = (byte) getMipmaps().size();
+	}
+
+	public static final record Resource(byte[] tag, byte flags, int offset) {
+
 	}
 
 	public static final class Header {
@@ -222,7 +279,7 @@ public final class VTFFile implements ValveFile {
 		header.lowResImageWidth = (byte) thumbnail.getWidth();
 		header.lowResImageHeight = (byte) thumbnail.getHeight();
 
-		return new VTFFile(header, thumbnail, mipmaps, new ArrayList<>());
+		return new VTFFile(header, thumbnail, mipmaps, new ArrayList<>(), EnumSet.noneOf(VTFTextureFlag.class));
 	}
 
 	public static VTFFile read(File file) throws IOException {
@@ -244,12 +301,22 @@ public final class VTFFile implements ValveFile {
 			);
 		}
 
+		Set<VTFTextureFlag> flags = EnumSet.noneOf(VTFTextureFlag.class);
+
 		header.versionMajor = buffer.getInt();
 		header.versionMinor = buffer.getInt();
 		header.headerSize = buffer.getInt();
 		header.width = buffer.getShort();
 		header.height = buffer.getShort();
 		header.flags = buffer.getInt();
+
+		for (VTFTextureFlag flag : VTFTextureFlag.values()) {
+			int value = flag.getValue();
+			if ((header.flags & value) != 0) {
+				flags.add(flag);
+			}
+		}
+
 		header.frameCount = buffer.getShort();
 		header.firstFrame = buffer.getShort();
 
@@ -265,12 +332,12 @@ public final class VTFFile implements ValveFile {
 
 		header.bumpmapScale = buffer.getFloat();
 
-		ImageDataFormat highResFormat = ImageDataFormat.values()[buffer.getInt()];
+		ImageDataFormat highResFormat = ImageDataFormat.get(buffer.getInt());
 		header.highResImageFormat = highResFormat;
 
 		header.mipmapCount = buffer.get();
 
-		ImageDataFormat lowResFormat = ImageDataFormat.values()[buffer.getInt()];
+		ImageDataFormat lowResFormat = ImageDataFormat.get(buffer.getInt());
 		header.lowResImageFormat = lowResFormat;
 
 		header.lowResImageWidth = buffer.get();
@@ -283,9 +350,9 @@ public final class VTFFile implements ValveFile {
 		}
 
 		List<VTFResource> resources = new ArrayList<>();
+		List<Resource> rawResources = new ArrayList<>();
 
 		if (version >= 73) {
-			System.out.println("Handling resources...");
 			List<VTFMipmap> mipmaps = null;
 			BufferedImage thumbnail = null;
 
@@ -297,37 +364,76 @@ public final class VTFFile implements ValveFile {
 				byte[] tag = new byte[3];
 				buffer.get(tag);
 
-				byte flags = buffer.get();
+				byte resourceFlags = buffer.get();
 				int offset = buffer.getInt();
 
-				resources.add(new VTFResource(tag, flags, offset));
+				rawResources.add(new Resource(tag, resourceFlags, offset));
+			}
+
+			rawResources.sort(Comparator.comparingInt(it -> it.offset));
+			for (int i = 0; i < rawResources.size(); i++) {
+				Resource raw = rawResources.get(i);
+
+				if (raw.flags == (byte) 0x2) {
+					resources.add(new VTFResource.IntData(raw.tag, raw.offset));
+				} else {
+					int start = raw.offset;
+					int end = buffer.limit();
+
+					if (i + 1 < rawResources.size()) {
+						for (int j = i + 1; j < rawResources.size(); j++) {
+							Resource resource = rawResources.get(j);
+							if (resource.flags == (byte) 0x2) {
+								continue;
+							}
+
+							end = resource.offset;
+							break;
+						}
+					}
+
+					boolean isHighResData = raw.tag[0] == (byte) 0x30 && raw.tag[1] == 0 && raw.tag[2] == 0;
+					boolean isLowResData = raw.tag[0] == (byte) 0x01 && raw.tag[1] == 0 && raw.tag[2] == 0;
+					int size = end - start;
+
+					buffer.position(start);
+					if (!isHighResData && !isLowResData) {
+						size = buffer.getInt();
+					}
+
+					byte[] data = new byte[size];
+					buffer.get(data);
+					resources.add(new VTFResource.BinData(raw.tag, data));
+				}
+			}
+
+			for (VTFResource resource : resources) {
+				byte[] tag = resource.getTag();
+				if (!(resource instanceof VTFResource.BinData bin)) {
+					continue;
+				}
+
+				ByteBuffer data = ByteBuffer.wrap(bin.getData());
 
 				if (tag[0] == (byte) 0x30 && tag[1] == 0 && tag[2] == 0) {
-					System.out.println("Found high resolution resource data tag.");
-					int start = buffer.position();
-					buffer.position(offset);
-					mipmaps = readMipmaps(buffer, header, highResFormat);
-					buffer.position(start);
+					mipmaps = readMipmaps(data, header, highResFormat, flags);
 					continue;
 				}
 
 				if (tag[0] == (byte) 0x01 && tag[1] == 0 && tag[2] == 0) {
-					System.out.println("Found low resolution resource data tag.");
-					int start = buffer.position();
-					buffer.position(offset);
-					thumbnail = lowResFormat.read(header.lowResImageWidth, header.lowResImageHeight, buffer);
-					buffer.position(start);
+					thumbnail = lowResFormat.read(header.lowResImageWidth, header.lowResImageHeight, data);
 				}
 			}
 
-			return new VTFFile(header, thumbnail, mipmaps, resources);
+			return new VTFFile(header, thumbnail, mipmaps, resources, flags);
 		}
 
 		buffer.position(header.headerSize);
+
 		BufferedImage thumbnail = lowResFormat.read(header.lowResImageWidth, header.lowResImageHeight, buffer);
 
-		List<VTFMipmap> mipmaps = readMipmaps(buffer, header, highResFormat);
-		return new VTFFile(header, thumbnail, mipmaps, resources);
+		List<VTFMipmap> mipmaps = readMipmaps(buffer, header, highResFormat, flags);
+		return new VTFFile(header, thumbnail, mipmaps, resources, flags);
 	}
 
 	public static void write(VTFFile file, WritableByteChannel channel) throws IOException {
@@ -350,13 +456,33 @@ public final class VTFFile implements ValveFile {
 
 		byte[] lowResImageData = lowResFormat.write(file.getThumbnail());
 
-		if (version >= 73 && resources.isEmpty()) {
-			int lowResOffset = header.headerSize + 16;
-			int highResOffset = lowResOffset + lowResImageData.length;
-			resources.add(new VTFResource(new byte[]{0x01, 0, 0}, (byte) 0, lowResOffset));
-			resources.add(new VTFResource(new byte[]{0x30, 0, 0}, (byte) 0, highResOffset));
+		Set<VTFTextureFlag> flags = file.getFlags();
+		int flagsValue = 0;
+		for (VTFTextureFlag flag : flags) {
+			flagsValue |= flag.getValue();
 		}
 
+		header.flags = flagsValue;
+
+		if (version >= 73) {
+			//TODO: Overwrite nonsense.
+			if (file.getResourceByTag("\1\0\0") == null) {
+				resources.add(0, new VTFResource.BinData(new byte[]{0x01, 0, 0}, lowResImageData));
+			}
+
+			//60 is correct because base 8, for some reason.
+			VTFResource highResResource = file.getResourceByTag("\60\0\0");
+			byte[] bytes = extractHighResImageData(file, highResFormat);
+
+			if (highResResource == null) {
+				resources.add(new VTFResource.BinData(new byte[]{0x30, 0, 0}, bytes));
+			} else if (highResResource instanceof VTFResource.BinData data) {
+				data.setData(bytes);
+			} else {
+				throw new IllegalStateException("Invalid high resolution resource data.");
+			}
+		}
+		header.resourceCount = resources.size();
 		header.headerSize = 80 + (header.resourceCount * 8);
 
 		ByteBuffer headerBuffer = ByteBuffer.allocate(header.headerSize);
@@ -377,9 +503,9 @@ public final class VTFFile implements ValveFile {
 		headerBuffer.putFloat(header.reflectivity[2]);
 		headerBuffer.put(header.padding1);
 		headerBuffer.putFloat(header.bumpmapScale);
-		headerBuffer.putInt(header.highResImageFormat.ordinal());
+		headerBuffer.putInt(header.highResImageFormat.getIndex());
 		headerBuffer.put(header.mipmapCount);
-		headerBuffer.putInt(header.lowResImageFormat.ordinal());
+		headerBuffer.putInt(header.lowResImageFormat.getIndex());
 		headerBuffer.put(header.lowResImageWidth);
 		headerBuffer.put(header.lowResImageHeight);
 
@@ -392,38 +518,86 @@ public final class VTFFile implements ValveFile {
 			headerBuffer.putInt(header.resourceCount);
 			headerBuffer.put(header.padding3);
 
+			int offset = headerBuffer.limit();
 			for (VTFResource resource : resources) {
-				headerBuffer.put(resource.tag());
-				headerBuffer.put(resource.flags());
-				headerBuffer.putInt(resource.offset());
-			}
-		}
+				byte[] tag = resource.getTag();
+				byte flag = resource.getFlag();
+				headerBuffer.put(tag);
+				headerBuffer.put(flag);
 
-		channel.write(headerBuffer.clear());
-		channel.write(ByteBuffer.wrap(lowResImageData));
+				if (resource instanceof VTFResource.IntData data) {
+					headerBuffer.putInt(data.getData());
+				} else if (resource instanceof VTFResource.BinData data) {
+
+
+					headerBuffer.putInt(offset);
+					offset += data.getData().length;
+					if (!resource.isHighResImageData() && !resource.isLowResImageData()) {
+						offset += 4;
+					}
+				}
+			}
+
+			channel.write(headerBuffer.clear());
+
+			for (VTFResource resource : resources) {
+				if (!(resource instanceof VTFResource.BinData data)) {
+					continue;
+				}
+
+				byte[] resData = data.getData();
+
+				if (!resource.isHighResImageData() && !resource.isLowResImageData()) {
+					ByteBuffer allocate = ByteBuffer.allocate(4);
+					allocate.order(ByteOrder.LITTLE_ENDIAN);
+					allocate.putInt(resData.length);
+					allocate.flip();
+					channel.write(allocate);
+
+				}
+
+				channel.write(ByteBuffer.wrap(resData));
+			}
+
+		} else {
+			channel.write(headerBuffer.clear());
+			channel.write(ByteBuffer.wrap(lowResImageData));
+			channel.write(ByteBuffer.wrap(extractHighResImageData(file, highResFormat)));
+		}
+	}
+
+	private static byte[] extractHighResImageData(VTFFile file, ImageDataFormat highResFormat) throws IOException {
+		ByteArrayOutputStream highResData = new ByteArrayOutputStream();
 
 		List<VTFMipmap> mipmaps = file.getMipmaps();
 		for (int i = mipmaps.size() - 1; i >= 0; i--) {
 			VTFMipmap mipmap = mipmaps.get(i);
 			for (VTFFrame frame : mipmap.getFrames()) {
 				for (VTFFace face : frame.getFaces()) {
-					channel.write(ByteBuffer.wrap(highResFormat.write(face.getImage())));
+					byte[] write = highResFormat.write(face.getImage());
+					highResData.write(write);
 				}
 			}
 		}
+
+		return highResData.toByteArray();
 	}
 
-	private static List<VTFMipmap> readMipmaps(ByteBuffer data, Header header, ImageDataFormat format) {
+	private static List<VTFMipmap> readMipmaps(ByteBuffer data, Header header, ImageDataFormat format, Set<VTFTextureFlag> flags) {
 		List<VTFMipmap> mipmaps = new ArrayList<>();
 
 		int mipmapCount = header.mipmapCount;
 		int frameCount = header.frameCount;
 		int faceCount = 1;
 
-		//TODO
-//		if (instance.isFlagSet(TextureFlags.ENVMAP)) {
-//			faceCount = 6;
-//		}
+		//This is literally just VTFFile#getFaceCount, but we don't have access to a VTFFile instance so we're inlining.
+		if (flags.contains(VTFTextureFlag.ENVMAP)) {
+			if ((header.firstFrame & 0xFFFF) != 0xFFFF && header.versionMinor < 5) {
+				faceCount = 7;
+			} else {
+				faceCount = 6;
+			}
+		}
 
 		for (int mipmapIndex = mipmapCount; mipmapIndex >= 0; mipmapIndex--) {
 			var width = (int) header.width >> mipmapIndex;

@@ -1,15 +1,17 @@
 package blue.sparse.vfi.files.vtf.image;
 
 import blue.sparse.vfi.files.vtf.image.impl.*;
+import blue.sparse.vfi.files.vtf.image.impl.dxt.*;
 
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 
 public enum ImageDataFormat implements ImageFormatReader, ImageFormatWriter {
+	UNKNOWN(new ImageReaderUnknown(), null),
 	RGBA8888(new ImageReaderWriterRGBA8888()),
-	ABGR8888,
-	RGB888,
-	BGR888,
+	ABGR8888(new ImageReaderWriterABGR8888()),
+	RGB888(new ImageReaderWriterRGB888()),
+	BGR888(new ImageReaderWriterBGR888()),
 	RGB565,
 	I8,
 	IA88,
@@ -18,17 +20,17 @@ public enum ImageDataFormat implements ImageFormatReader, ImageFormatWriter {
 	RGB888_BLUESCREEN,
 	BGR888_BLUESCREEN,
 	ARGB8888,
-	BGRA8888,
+	BGRA8888(new ImageReaderWriterBGRA8888()),
 	DXT1(new ImageReaderDXT1(), new ImageWriterDXT1()),
-	DXT3,
+	DXT3(new ImageReaderDXT3(), null),
 	DXT5(new ImageReaderDXT5(), null),
 	BGRX8888,
-	BGR565,
+	BGR565(new ImageReaderWriterBGR565()),
 	BGRX5551,
 	BGRA4444,
-	DXT1_ONEBITALPHA,
+	DXT1_ONEBITALPHA(new ImageReaderDXT1BitAlpha(), new ImageWriterDXT1BitAlpha()),
 	BGRA5551,
-	UV88,
+	UV88(new ImageReaderWriterUV88()),
 	UVWQ8888,
 	RGBA16161616F,
 	RGBA16161616,
@@ -68,4 +70,13 @@ public enum ImageDataFormat implements ImageFormatReader, ImageFormatWriter {
 	public byte[] write(BufferedImage image) {
 		return getWriter().write(image);
 	}
+
+	public int getIndex() {
+		return ordinal() - 1;
+	}
+
+	public static ImageDataFormat get(int index) {
+		return values()[index + 1];
+	}
+
 }

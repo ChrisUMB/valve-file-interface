@@ -1,5 +1,7 @@
 plugins {
     id 'java'
+    id 'java-library'
+    id 'maven-publish'
 }
 
 group 'blue.sparse'
@@ -10,20 +12,22 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.joml:joml:1.9.13'
+    api 'org.joml:joml:1.9.13'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
 }
 
-//v_portalgun
-//  v_portalgun.mdl
-//  v_portalgun.vvd
-//  v_portalgun.vtx
-
-//var model = ValveModel.load("v_portalgun", new File("v_portalgun"));
-
-//model.export(new File("v_portalgun.fbx"));
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId project.group
+            artifactId project.name
+            version project.version
+            from components.java
+        }
+    }
+}
 
 test {
     useJUnitPlatform()
