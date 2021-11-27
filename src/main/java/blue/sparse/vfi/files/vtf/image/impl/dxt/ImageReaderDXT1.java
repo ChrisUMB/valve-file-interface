@@ -1,8 +1,7 @@
-package blue.sparse.vfi.files.vtf.image.impl;
+package blue.sparse.vfi.files.vtf.image.impl.dxt;
 
 import blue.sparse.vfi.files.vtf.image.ImageFormatReader;
 import blue.sparse.vfi.files.vtf.image.ImageUtil;
-import org.joml.Vector3f;
 
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;

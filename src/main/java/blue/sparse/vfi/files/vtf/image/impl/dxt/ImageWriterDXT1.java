@@ -1,4 +1,4 @@
-package blue.sparse.vfi.files.vtf.image.impl;
+package blue.sparse.vfi.files.vtf.image.impl.dxt;
 
 import blue.sparse.vfi.files.vtf.image.ImageFormatWriter;
 import blue.sparse.vfi.files.vtf.image.ImageUtil;
