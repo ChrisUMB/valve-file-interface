@@ -23,17 +23,30 @@ public final class ImageUtil {
 		return (short) ((r << 6 | g) << 5 | b);
 	}
 
+	public static float distanceSquared(Vector3f a, Vector3f b) {
+		float dx = a.x - b.x;
+		float dy = a.y - b.y;
+		float dz = a.z - b.z;
+		return Math.fma(dx, dx, Math.fma(dy, dy, dz * dz));
+	}
+
+	public static int round(float v) {
+		int floor = (int) v;
+		float part = v - floor;
+		return part < 0.5f ? floor : (floor + 1);
+	}
+
 	public static short encodeRGB565(Vector3f v) {
-		int r = Math.round(v.x * BITS_5);
-		int g = Math.round(v.y * BITS_6);
-		int b = Math.round(v.z * BITS_5);
+		int r = round(v.x * BITS_5);
+		int g = round(v.y * BITS_6);
+		int b = round(v.z * BITS_5);
 		return encodeRGB565(r, g, b);
 	}
 
 	public static short encodeRGB565(Vector4f v) {
-		int r = Math.round(v.x * BITS_5);
-		int g = Math.round(v.y * BITS_6);
-		int b = Math.round(v.z * BITS_5);
+		int r = round(v.x * BITS_5);
+		int g = round(v.y * BITS_6);
+		int b = round(v.z * BITS_5);
 		return encodeRGB565(r, g, b);
 	}
 

@@ -42,6 +42,6 @@ public final class VTFFace {
 	public String toString() {
 		return "VTFFace[" +
 				"index=" + index + ", " +
-				"image=" + image + ']';
+				"image=" + "{"+image.getWidth()+"x"+image.getHeight()+"}" + ']';
 	}
 }

@@ -221,7 +221,7 @@ public final class VTFFile implements ValveFile {
 		public short height;
 		public int flags = 0;
 		public short frameCount = 1;
-		public short firstFrame = 0;
+		public short firstFrame = -1;
 		public byte[] padding0 = new byte[4];
 		public float[] reflectivity = new float[]{0.01f, 0.01f, 0.01f};
 		public byte[] padding1 = new byte[4];
@@ -275,6 +275,31 @@ public final class VTFFile implements ValveFile {
 		header.mipmapCount = (byte) mipmaps.size();
 		header.width = (short) image.getWidth();
 		header.height = (short) image.getHeight();
+
+		header.lowResImageWidth = (byte) thumbnail.getWidth();
+		header.lowResImageHeight = (byte) thumbnail.getHeight();
+
+		return new VTFFile(header, thumbnail, mipmaps, new ArrayList<>(), EnumSet.noneOf(VTFTextureFlag.class));
+	}
+
+	public static VTFFile createEnvMap(BufferedImage[] images) {
+		VTFFace[] faces = new VTFFace[6];
+		for (int i = 0; i < faces.length; i++) {
+			faces[i] = new VTFFace(i, images[i]);
+		}
+
+		int size = images[0].getWidth();
+		BufferedImage thumbnail = ImageUtil.createThumbnail(images[0]);
+		List<VTFMipmap> mipmaps = List.of(
+				new VTFMipmap(0, size, size, List.of(
+						new VTFFrame(0, List.of(faces))
+				))
+		);
+
+		VTFFile.Header header = new VTFFile.Header();
+		header.mipmapCount = (byte) mipmaps.size();
+		header.width = (short) size;
+		header.height = (short) size;
 
 		header.lowResImageWidth = (byte) thumbnail.getWidth();
 		header.lowResImageHeight = (byte) thumbnail.getHeight();
@@ -482,8 +507,13 @@ public final class VTFFile implements ValveFile {
 				throw new IllegalStateException("Invalid high resolution resource data.");
 			}
 		}
+
 		header.resourceCount = resources.size();
-		header.headerSize = 80 + (header.resourceCount * 8);
+		if(version >= 72) {
+			header.headerSize = 80 + (header.resourceCount * 8);
+		} else {
+			header.headerSize = 64;
+		}
 
 		ByteBuffer headerBuffer = ByteBuffer.allocate(header.headerSize);
 		headerBuffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -528,8 +558,6 @@ public final class VTFFile implements ValveFile {
 				if (resource instanceof VTFResource.IntData data) {
 					headerBuffer.putInt(data.getData());
 				} else if (resource instanceof VTFResource.BinData data) {
-
-
 					headerBuffer.putInt(offset);
 					offset += data.getData().length;
 					if (!resource.isHighResImageData() && !resource.isLowResImageData()) {
@@ -599,7 +627,11 @@ public final class VTFFile implements ValveFile {
 			}
 		}
 
-		for (int mipmapIndex = mipmapCount; mipmapIndex >= 0; mipmapIndex--) {
+		System.out.println("mipmapCount = " + mipmapCount);
+		System.out.println("frameCount = " + frameCount);
+		System.out.println("faceCount = " + faceCount);
+
+		for (int mipmapIndex = mipmapCount - 1; mipmapIndex >= 0; mipmapIndex--) {
 			var width = (int) header.width >> mipmapIndex;
 			var height = (int) header.height >> mipmapIndex;
 
@@ -609,6 +641,7 @@ public final class VTFFile implements ValveFile {
 
 			VTFMipmap mipmap = new VTFMipmap(mipmapIndex, width, height, new ArrayList<>());
 			mipmaps.add(0, mipmap);
+			System.out.println("mipmaps.size() = " + mipmaps.size());
 
 			for (int frameIndex = 0; frameIndex < frameCount; frameIndex++) {
 				VTFFrame frame = new VTFFrame(frameIndex, new ArrayList<>());
@@ -645,7 +678,7 @@ public final class VTFFile implements ValveFile {
 	public String toString() {
 		return "VTFFile[" +
 				"header=" + header + ", " +
-				"thumbnail=" + thumbnail + ", " +
+				"thumbnail=" + "{"+thumbnail.getWidth()+"x"+thumbnail.getHeight()+"}" + ", " +
 				"mipmaps=" + mipmaps + ", " +
 				"resources=" + resources + ']';
 	}

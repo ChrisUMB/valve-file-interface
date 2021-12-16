@@ -51,6 +51,8 @@ public final class ValveTexture implements ValveAsset {
 			throw new IllegalStateException("Tried to export VTF, but mipmaps were empty. [\"" + name + "\"]");
 		}
 
+		directory.mkdirs();
+
 		VTFMipmap mipmap = mipmaps.get(0);
 		List<VTFFrame> frames = mipmap.getFrames();
 		int i = 0;
@@ -62,7 +64,7 @@ public final class ValveTexture implements ValveAsset {
 
 			VTFFace face = faces.get(0);
 
-			File out = new File(directory, name = "." + i + "." + format.toLowerCase());
+			File out = new File(directory, name + "." + i + "." + format.toLowerCase());
 			ImageIO.write(face.getImage(), format, out);
 			i++;
 		}
@@ -168,5 +170,7 @@ public final class ValveTexture implements ValveAsset {
 		vtf.setReflectivity(reflectivity);
 	}
 
-
+	public VTFFile getVTF() {
+		return vtf;
+	}
 }

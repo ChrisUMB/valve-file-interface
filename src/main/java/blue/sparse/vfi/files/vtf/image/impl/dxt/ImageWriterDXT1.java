@@ -72,6 +72,10 @@ public final class ImageWriterDXT1 implements ImageFormatWriter {
         );
     }
 
+    public static BlockData evaluate2(Vector3f[] originalColors) {
+        return run(originalColors, ImageWriterDXT1::getMinMaxColors);
+    }
+
     private static BlockData run(Vector3f[] originalColors, Algorithm algorithm) {
         Vector3f min = new Vector3f(), max = new Vector3f();
         algorithm.getMinMax(originalColors, min, max);
@@ -245,29 +249,49 @@ public final class ImageWriterDXT1 implements ImageFormatWriter {
         }
     }
 
-    public static Vector3f[] interpolateColors(Vector3f color0, Vector3f color1) {
+    public static Vector3f[] interpolateColorsPreEncoded(Vector3f[] target, int color0int, Vector3f color0, int color1int, Vector3f color1) {
+        target[0].set(color0);
+        target[1].set(color1);
+
+        if(color0int > color1int) {
+//            target[3].set(color0).add(new Vector3f(color1).mul(2f)).div(3f);
+//            target[2].set(color0).mul(2f).add(color1).div(3f);
+            target[2].set(
+                    (color0.x * 2f + color1.x) / 3f,
+                    (color0.y * 2f + color1.y) / 3f,
+                    (color0.z * 2f + color1.z) / 3f
+            );
+            target[3].set(
+                    (color0.x + color1.x * 2f) / 3f,
+                    (color0.y + color1.y * 2f) / 3f,
+                    (color0.z + color1.z * 2f) / 3f
+            );
+        } else {
+//            target[2].set(color0).add(color1).div(2f);
+            target[2].set(
+                    (color0.x + color1.x) / 2f,
+                    (color0.y + color1.y) / 2f,
+                    (color0.z + color1.z) / 2f
+            );
+            target[3].set(0f);
+        }
+
+        return target;
+    }
+
+    public static Vector3f[] interpolateColors(Vector3f[] target, Vector3f color0, Vector3f color1) {
         var color0int = (int) ImageUtil.encodeRGB565(color0) & 0xFFFF;
         var color1int = (int) ImageUtil.encodeRGB565(color1) & 0xFFFF;
+        return interpolateColorsPreEncoded(target, color0int, color0, color1int, color1);
+    }
 
-        var array = new Vector3f[4];
-        for (int i = 0; i < array.length; i++) {
-            if (color0int > color1int) {
-                switch (i) {
-                    case 0 -> array[i] = color0;
-                    case 1 -> array[i] = color1;
-                    case 2 -> array[i] = new Vector3f(color0).mul(2f).add(color1).div(3f);
-                    case 3 -> array[i] = new Vector3f(color0).add(new Vector3f(color1).mul(2f)).div(3f);
-                }
-            } else {
-                switch (i) {
-                    case 0 -> array[i] = color0;
-                    case 1 -> array[i] = color1;
-                    case 2 -> array[i] = new Vector3f(color0).add(color1).div(2f);
-                    case 3 -> array[i] = new Vector3f(0f);
-                }
-            }
+    public static Vector3f[] interpolateColors(Vector3f color0, Vector3f color1) {
+        Vector3f[] target = new Vector3f[4];
+        for (int i = 0; i < target.length; i++) {
+            target[i] = new Vector3f();
         }
-        return array;
+
+        return interpolateColors(target, color0, color1);
     }
 
     private static void rgb565ify(Vector3f vector1, Vector3f vector2) {
